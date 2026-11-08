@@ -1,0 +1,16 @@
+{
+  "name": "haibao-video-remotion",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "render": "remotion render src/index.ts PriceStory \"../成片.mp4\" --browser-executable=\"/Applications/Google Chrome.app/Contents/MacOS/Google Chrome\" --image-format=jpeg --jpeg-quality=90 --concurrency=6 --codec=h264 --crf=20 --overwrite --log=info",
+    "still": "remotion still src/index.ts PriceStory \"../frame.png\" --browser-executable=\"/Applications/Google Chrome.app/Contents/MacOS/Google Chrome\" --frame=300",
+    "studio": "remotion studio src/index.ts --browser-executable=\"/Applications/Google Chrome.app/Contents/MacOS/Google Chrome\""
+  },
+  "dependencies": {
+    "@remotion/cli": "4.0.541",
+    "react": "18.3.1",
+    "react-dom": "18.3.1",
+    "remotion": "4.0.541"
+  }
+}
