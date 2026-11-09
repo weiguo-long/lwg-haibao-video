@@ -12,7 +12,13 @@
   "width": 1080,
   "height": 1440,
   "subtitleMax": 22,
-  "subtitleStyle": {"background": "#1A1614", "color": "#F1E6D8", "position": "bottom"},
+  "subtitleMode": "footer",
+  "subtitleFade": 0.18,
+  "placeholderPolicy": "hide-only-never-clear",
+  "perSceneColors": {
+    "1": "#C2BFBD", "2": "#4A5B78", "3": "#C2BFBD", "4": "#28314E",
+    "5": "#C2BFBD", "6": "#4A5B78", "7": "#28314E", "8": "#28314E"
+  },
   "enterAnimation": {
     "skipFirstScene": true,
     "driver": "t - scene.start",
@@ -25,6 +31,13 @@
 ```
 
 `sources` 与 `scripts` **必须等长且顺序一一对应**；`sources` 是相对 `outputs/` 的海报文件名。`gap` 是场景之间留白，`fps` 决定 `startFrame` / `durationInFrames`。改音色或语速只改 `voice` / `rate` 后重跑 `build_voice.py`，时间轴会自动重算。
+
+v3 新增字段（供动画阶段读取，`build_voice.py` 本身不改）：
+
+- `subtitleMode: "footer"`：字幕长在每页页脚，不用独立字幕条；`"bottom-bar"` 才是 v2 历史链路。
+- `subtitleFade: 0.18`：切句淡入秒数，渲染器 `state_key` 必须用同一个值。
+- `placeholderPolicy: "hide-only-never-clear"`：**字幕不可见时只隐藏、绝不清空文字**，否则行盒塌陷会牵动同页元素。
+- `perSceneColors`：逐页字幕色，取该页配色里已有的文字色；深底页用米白与灰蓝调和出的浅色，不要纯白。详见 `references/05-subtitle-as-footer.md`。
 
 ## 2. 音色与语速
 
@@ -66,7 +79,7 @@ async for chunk in comm.stream():
 3. **保留句内标点**（逗号让字幕有呼吸），只去掉句末标点和空格。
 4. 超长兜底：按 `subtitleMax` 硬切，避免单行溢出。
 
-踩过的坑：把标点全部删掉会让字幕连成一片、读起来喘不过气。单条 22–24 字在 1080 宽、`3.05cqw` 字号下正好单行。
+踩过的坑：把标点全部删掉会让字幕连成一片、读起来喘不过气。单条 22–24 字在 v3 的 `2.8cqw` / 版心 ≥77cqw 下正好单行（v2 用 `3.05cqw` 通栏）。**v3 必须逐页量**：各页字幕位宽度不同，用 `?audit=1` 把 53 条字幕逐条塞进各自页脚，检查 `scrollWidth` 与左右边界，不能只按最宽的页算。
 
 ## 5. 词级时间戳 → 字幕时间点
 
@@ -94,11 +107,11 @@ WordBoundary 给出的是**词**的时间，字幕是**句**。做法：
 
 | 字段 | 类型 | 说明 |
 |---|---|---|
-| `version` | int | 2 = 字幕版（v1 是卡点高亮版，已废弃） |
+| `version` | int | 2 = 独立字幕条版；**3 = 字幕即页脚版**（v1 卡点高亮版已废弃） |
 | `fps` | int | 30；`totalFrames = round(totalDuration * fps)` |
 | `voice` / `rate` / `gap` | — | 便于复跑时追溯 |
 | `audioFile` | str | `voiceover-full.mp3` |
-| `subtitleStyle` | obj | 字幕条 `background` / `color` / `position` |
+| `subtitleStyle` | obj | v2 字幕条 `background` / `color` / `position`；v3 仅作兼容占位，实际颜色由 `perSceneColors` 逐页决定 |
 | `enterAnimation` | obj | `skipFirstScene`、`duration`、`step`、`lift`、`maxGroups`、`order`、`driver` |
 | `totalDuration` / `totalFrames` | number | 全片总时长与总帧数 |
 | `scenes[]` | array | 每场景一个对象，见下 |
@@ -115,7 +128,9 @@ WordBoundary 给出的是**词**的时间，字幕是**句**。做法：
 | `words` | 词级时间戳原始数组（预览HTML里会被 slim 掉） |
 | `subtitles[]` | `{id, text, start, end}`，`start/end` 为**全片绝对时间** |
 
-下游约定：`build_preview.py` 与 `build_render.py` 都从 `timeline.json` 读 `scenes[].source` 去加载海报；`render_cdp.py` 读 `fps` / `totalFrames` / `subtitles` / `enterAnimation`。
+下游约定：`build_preview_v3.py`（v3）/ `build_preview.py`（v2）从 `timeline.json` 读 `scenes[].source` 去加载海报；`render_cdp_v3.py` 读 `fps` / `totalFrames` / `subtitles` / `enterAnimation`，并据 `subtitleFade` 决定淡入期状态键。**配音链路 v2/v3 完全通用，改版式不需要重跑 `build_voice.py`**——本轮 v3 全程沿用 11-08 生成的 `timeline.json` 与音轨，时间戳未变。
+
+场景末尾到下一场景起点之间的 `gap`（本项目 0.803s）里没有字幕，这正是 v3 占位恒定要处理的空档，见 `references/05-subtitle-as-footer.md` 第 4 节。
 
 ## 8. 校验
 
