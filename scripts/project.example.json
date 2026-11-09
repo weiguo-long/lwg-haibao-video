@@ -7,6 +7,19 @@
   "width": 1080,
   "height": 1440,
   "subtitleMax": 22,
+  "subtitleMode": "footer",
+  "subtitleFade": 0.18,
+  "placeholderPolicy": "hide-only-never-clear",
+  "perSceneColors": {
+    "1": "#C2BFBD",
+    "2": "#4A5B78",
+    "3": "#C2BFBD",
+    "4": "#28314E",
+    "5": "#C2BFBD",
+    "6": "#4A5B78",
+    "7": "#28314E",
+    "8": "#28314E"
+  },
   "subtitleStyle": {
     "background": "#1A1614",
     "color": "#F1E6D8",
